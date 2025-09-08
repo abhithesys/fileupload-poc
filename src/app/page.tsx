@@ -9,7 +9,7 @@ import "@crayonai/react-ui/styles/index.css";
 import { ChatProvider } from "@crayonai/react-core";
 import {
   Container,
-  Messages,
+  MessageLoading,
   MobileHeader,
   NewChatButton,
   ScrollArea,
@@ -21,6 +21,7 @@ import {
   ThreadList,
 } from "@crayonai/react-ui/Shell";
 import { CustomComposer } from "../components/Composer";
+import { Messages } from "../components/Messages";
 
 export default function Home() {
   // Call relevant APIs to manage thread list here
@@ -79,7 +80,7 @@ export default function Home() {
           <ThreadContainer>
             <MobileHeader />
             <ScrollArea>
-              <Messages />
+              <Messages loader={<MessageLoading />} />
             </ScrollArea>
             <CustomComposer
               onUploadFile={async ({ id, file }) => {

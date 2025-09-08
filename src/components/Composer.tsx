@@ -45,8 +45,13 @@ export const CustomComposer = ({
 
     if (uploads.length > 0) {
       createMessage.context = [
-        "user uploaded these files:",
-        Object.fromEntries(uploads.map((u) => [u.id, { name: u.name }])),
+        {
+          type: "user_file_upload",
+          files: uploads.map((u) => ({
+            id: u.id,
+            name: u.name,
+          })),
+        },
       ];
     }
 
