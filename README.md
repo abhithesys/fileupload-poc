@@ -1,37 +1,54 @@
-# C1 App Template
+## File Upload (POC)
 
-Template repository for a generative UI chat client, powered by [C1 by Thesys](https://thesys.dev), and bootstrapped with `create-next-app`
+This adds a minimal, in-memory file upload capability wired to the chat composer and a Next.js API route.
 
-[![Built with Thesys](https://thesys.dev/built-with-thesys-badge.svg)](https://thesys.dev)
+### What was added
 
-## Getting Started
+- **UI (`src/components/Composer.tsx`)**:
+  - `onUploadFile` prop: `(file: { id: string; file: File }) => Promise<unknown>`
+  - Hidden native file input + **Attach** button (design system) with paperclip icon
+  - Upload state chips with statuses: **Uploading** → **Uploaded**
+  - Cross button on each chip to remove files before sending
+  - Send button disabled while any file is uploading
+  - On submit, uploaded files are included in the message `context` and local upload state is cleared
+- **API**:
+  - `POST /api/files` (`src/app/api/files/route.ts`) accepts `multipart/form-data` with one or more `file` fields and optional `id`
+  - Files are stored in-memory as text (using `File.text()`)
+  - In-memory store: `src/app/api/files/fileStore.ts` with `addFile`, `removeFile`, `getFile`, `listFiles`
+  - `POST /api/chat` (`src/app/api/chat/route.ts`) includes `read_file` tool in the system prompt
 
-First, generate a new API key from [Thesys Console](https://chat.thesys.dev/console/keys) and then set it your environment variable.
+### Client usage (example)
 
-```bash
-export THESYS_API_KEY=<your-api-key>
+Pass an upload function into `CustomComposer`:
+
+```tsx
+async function onUploadFile({ id, file }: { id: string; file: File }) {
+  const fd = new FormData();
+  fd.append("file", file);
+  fd.append("id", id);
+
+  const res = await fetch("/api/files", { method: "POST", body: fd });
+  if (!res.ok) throw new Error("Upload failed");
+  return res.json();
+}
 ```
 
-Install dependencies:
+Then render the composer somewhere in your page:
 
-```bash
-npm i
+```tsx
+<CustomComposer onUploadFile={onUploadFile} />
 ```
 
-Then, run the development server:
+### API details
 
-```bash
-npm run dev
-```
+- **Endpoint**: `POST /api/files`
+- **Body**: `multipart/form-data`
+  - `file`: one or more file parts
+  - `id` (optional): client-generated ID to correlate UI with server state
+- **Response**: `{ files: Array<{ id, name, type, size }> }`
+- **Storage**: in-memory, text-only; not persisted, cleared on server restart
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Caveats
 
-You can start editing your responses by modifying the system prompt in `src/app/api/chat/route.ts`.
-
-## Learn More
-
-To learn more about Thesys C1, take a look at the [C1 Documentation](https://docs.thesys.dev) - learn about Thesys C1.
-
-## One-Click Deploy with Vercel
-
-[![Deploy with Vercel](https://vercel.com/button)](<https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fthesysdev%2Ftemplate-c1-next&env=THESYS_API_KEY&envDescription=Thesys%20Generative%20UI%20API%20key%20can%20be%20found%20in%20the%20Thesys%20console&envLink=https%3A%2F%2Fchat.thesys.dev%2Fconsole%2Fkeys&demo-title=C1%20Generative%20UI%20API&demo-description=C1%20Generative%20UI%20API%20by%20Thesys%20is%20designed%20to%20create%20dynamic%20and%20intelligent%20user%20interfaces.%20It%20leverages%20large%20language%20models%20(LLMs)%20to%20generate%20UI%20components%20in%20real-time%2C%20adapting%20to%20user%20input%20and%20context.%20Developers%20can%20integrate%20C1%20into%20their%20applications%20to%20enhance%20user%20engagement%20with%20visually%20rich%20and%20responsive%20interfaces.&demo-url=https%3A%2F%2Fchat.thesys.dev&demo-image=https%3A%2F%2Fgithub.com%2FCharlesCreativeContent%2FmyImages%2Fblob%2Fmain%2Fimages%2FC1Hero.png%3Fraw%3Dtrue>)
+- In-memory store is not suitable for production (no persistence, no limits)
+- Consider size limits, validation, and auth for real-world use
