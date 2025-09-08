@@ -17,28 +17,6 @@ This adds a minimal, in-memory file upload capability wired to the chat composer
   - In-memory store: `src/app/api/files/fileStore.ts` with `addFile`, `removeFile`, `getFile`, `listFiles`
   - `POST /api/chat` (`src/app/api/chat/route.ts`) includes `read_file` tool in the system prompt
 
-### Client usage (example)
-
-Pass an upload function into `CustomComposer`:
-
-```tsx
-async function onUploadFile({ id, file }: { id: string; file: File }) {
-  const fd = new FormData();
-  fd.append("file", file);
-  fd.append("id", id);
-
-  const res = await fetch("/api/files", { method: "POST", body: fd });
-  if (!res.ok) throw new Error("Upload failed");
-  return res.json();
-}
-```
-
-Then render the composer somewhere in your page:
-
-```tsx
-<CustomComposer onUploadFile={onUploadFile} />
-```
-
 ### API details
 
 - **Endpoint**: `POST /api/files`
@@ -50,5 +28,6 @@ Then render the composer somewhere in your page:
 
 ### Caveats
 
+- This approach is only suitable for text-based files like CSV, JSON, etc.
 - In-memory store is not suitable for production (no persistence, no limits)
 - Consider size limits, validation, and auth for real-world use
